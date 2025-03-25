@@ -30,66 +30,70 @@ return 0;
 
 #include <stdio.h>
 #include <stdlib.h>
-#define MAX_REQUESTS 100
-void cscan(int requests[], int num_requests, int start_position, int num_blocks, int direction);
-int main() {
-int requests[MAX_REQUESTS];
-int num_requests, start_position, num_blocks, direction;
-printf("Enter the total number of disk blocks: ");
-scanf("%d", &num_blocks);
-printf("Enter the number of disk requests: ");
-scanf("%d", &num_requests);
-printf("Enter the disk request string: ");
-for (int i = 0; i < num_requests; i++) {
-scanf("%d", &requests[i]);
+void sortRequests(int requests[], int n) {
+int temp;
+for (int i = 0; i < n - 1; i++) {
+for (int j = i + 1; j < n; j++) {
+if (requests[i] > requests[j]) {
+temp = requests[i];
+requests[i] = requests[j];
+requests[j] = temp;
 }
-printf("Enter the starting head position: ");
-scanf("%d", &start_position);
-printf("Enter the direction (0 for Left, 1 for Right): ");
-scanf("%d", &direction);
-cscan(requests, num_requests, start_position, num_blocks, direction);
-return 0;
 }
-void cscan(int requests[], int num_requests, int start_position, int num_blocks, int direction) {
+}
+}
+void cscan(int requests[], int n, int head, int total_blocks, int direction) {
 int total_head_movements = 0;
-int current_position = start_position;
-int head_movements[num_requests];
-int num_head_movements = 0;
-for (int i = 0; i < num_requests - 1; i++) {
-for (int j = 0; j < num_requests - i - 1; j++) {
-if (requests[j] > requests[j + 1]) {
-int temp = requests[j];
-requests[j] = requests[j + 1];
-requests[j + 1] = temp;
+int served[n];
+for (int i = 0; i < n; i++) {
+served[i] = 0;
+}
+sortRequests(requests, n);
+int left[n], right[n], left_count = 0, right_count = 0;
+for (int i = 0; i < n; i++) {
+if (requests[i] < head) {
+left[left_count++] = requests[i];
+} else {
+right[right_count++] = requests[i];
 }
 }
+if (direction == 0) {
+for (int i = left_count - 1; i >= 0; i--) {
+total_head_movements += abs(head - left[i]);
+head = left[i];
+printf("%d ", head);
 }
-int start_index = 0;
-while (start_index < num_requests && requests[start_index] < current_position) {
-start_index++;
+total_head_movements += abs(head - 0);
+head = 0;
+for (int i = 0; i < right_count; i++) {
+total_head_movements += abs(head - right[i]);
+head = right[i];
+printf("%d ", head);
 }
-for (int i = start_index; i < num_requests; i++) {
-if (requests[i] >= num_blocks) {
-break;
+} else {
+for (int i = 0; i < right_count; i++) {
+total_head_movements += abs(head - right[i]);
+head = right[i];
+printf("%d ", head);
 }
-head_movements[num_head_movements++] = abs(current_position - requests[i]);
-total_head_movements += abs(current_position - requests[i]);
-current_position = requests[i];
+total_head_movements += abs(head - (total_blocks - 1));
+head = total_blocks - 1;
+for (int i = left_count - 1; i >= 0; i--) {
+total_head_movements += abs(head - left[i]);
+head = left[i];
+printf("%d ", head);
 }
-if (direction == 1) {
-head_movements[num_head_movements++] = abs(current_position - num_blocks);
-total_head_movements += abs(current_position - num_blocks);
-current_position = 0;
 }
-for (int i = 0; i < start_index; i++) {
-head_movements[num_head_movements++] = abs(current_position - requests[i]);
-total_head_movements += abs(current_position - requests[i]);
-current_position = requests[i];
+printf("\nTotal head movements: %d\n", total_head_movements);
 }
-printf("Order of requests served: ");
-for (int i = 0; i < num_requests; i++) {
-printf("%d ", requests[i]);
-}
-printf("\n");
-printf("Total number of head movements: %d\n", total_head_movements);
+int main() {
+int requests[] = {33, 99, 142, 52, 197, 79, 46, 65};
+int n = sizeof(requests) / sizeof(requests[0]);
+int head, direction;
+printf("Enter the starting head position: ");
+scanf("%d", &head);
+printf("Enter the direction (0 for left, 1 for right): ");
+scanf("%d", &direction);
+cscan(requests, n, head, 200, direction);
+return 0;
 }
