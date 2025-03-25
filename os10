@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <mpi.h>
+#define ARRAY_SIZE 1000
+int main(int argc, char **argv) {
+int rank, size;
+int local_sum = 0;
+int global_sum = 0;
+int local_array[ARRAY_SIZE];
+double average;
+MPI_Init(&argc, &argv);
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+srand(rank);
+for (int i = 0; i < ARRAY_SIZE; i++) {
+local_array[i] = rand() % 100;
+local_sum += local_array[i];
+}
+MPI_Reduce(&local_sum, &global_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+average = (double)global_sum / (size * ARRAY_SIZE);
+if (rank == 0) {
+printf("Global sum: %d\n", global_sum);
+printf("Average: %f\n", average);
+}
+MPI_Finalize();
+return 0;
+}
+
+2
+
+#include <stdio.h>
+#include <stdlib.h>
+#define MAX_REQUESTS 100
+void cscan(int requests[], int num_requests, int start_position, int num_blocks, int direction);
+int main() {
+int requests[MAX_REQUESTS];
+int num_requests, start_position, num_blocks, direction;
+printf("Enter the total number of disk blocks: ");
+scanf("%d", &num_blocks);
+printf("Enter the number of disk requests: ");
+scanf("%d", &num_requests);
+printf("Enter the disk request string: ");
+for (int i = 0; i < num_requests; i++) {
+scanf("%d", &requests[i]);
+}
+printf("Enter the starting head position: ");
+scanf("%d", &start_position);
+printf("Enter the direction (0 for Left, 1 for Right): ");
+scanf("%d", &direction);
+cscan(requests, num_requests, start_position, num_blocks, direction);
+return 0;
+}
+void cscan(int requests[], int num_requests, int start_position, int num_blocks, int direction) {
+int total_head_movements = 0;
+int current_position = start_position;
+int head_movements[num_requests];
+int num_head_movements = 0;
+for (int i = 0; i < num_requests - 1; i++) {
+for (int j = 0; j < num_requests - i - 1; j++) {
+if (requests[j] > requests[j + 1]) {
+int temp = requests[j];
+requests[j] = requests[j + 1];
+requests[j + 1] = temp;
+}
+}
+}
+int start_index = 0;
+while (start_index < num_requests && requests[start_index] < current_position) {
+start_index++;
+}
+for (int i = start_index; i < num_requests; i++) {
+if (requests[i] >= num_blocks) {
+break;
+}
+head_movements[num_head_movements++] = abs(current_position - requests[i]);
+total_head_movements += abs(current_position - requests[i]);
+current_position = requests[i];
+}
+if (direction == 1) {
+head_movements[num_head_movements++] = abs(current_position - num_blocks);
+total_head_movements += abs(current_position - num_blocks);
+current_position = 0;
+}
+for (int i = 0; i < start_index; i++) {
+head_movements[num_head_movements++] = abs(current_position - requests[i]);
+total_head_movements += abs(current_position - requests[i]);
+current_position = requests[i];
+}
+printf("Order of requests served: ");
+for (int i = 0; i < num_requests; i++) {
+printf("%d ", requests[i]);
+}
+printf("\n");
+printf("Total number of head movements: %d\n", total_head_movements);
+}
